@@ -14,17 +14,17 @@ export const SITE_CONFIG = {
     foundedNote: "Société de droit guinéen enregistrée",
   },
 
-  // Coordonnées & Contact (Placeholders officiels & conformes)
+  // Coordonnées & Contact (Officiels FKF)
   contact: {
     addressLine: "Kamsar, Préfecture de Boké",
     country: "République de Guinée",
     fullLocation: "Kamsar • Boké • République de Guinée",
-    phone: "[Numéro à renseigner]",
-    phoneHref: "tel:", // Exemple: "tel:+224XXXXXXXXX"
-    email: "[Email officiel]",
-    emailHref: "mailto:", // Exemple: "mailto:contact@fkf-guinee.com"
-    whatsappNumber: "[Numéro WhatsApp à renseigner]",
-    whatsappHref: "https://wa.me/?text=Bonjour%20FKF,%20je%20souhaite%20des%20renseignements%20sur%20vos%20services.",
+    phone: "+224 623 74 65 87",
+    phoneHref: "tel:+224623746587",
+    email: "contact@fkf-guinee.com",
+    emailHref: "mailto:contact@fkf-guinee.com",
+    whatsappNumber: "+224 623 74 65 87",
+    whatsappHref: "https://wa.me/224623746587",
   },
 
   // Réseaux sociaux & Liens externes
