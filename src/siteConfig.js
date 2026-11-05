@@ -21,9 +21,10 @@ export const SITE_CONFIG = {
     fullLocation: "Kamsar • Boké • République de Guinée",
     phone: "+224 623 74 65 87",
     phoneHref: "tel:+224623746587",
-    email: "contact@fkf-guinee.com",
-    emailHref: "mailto:contact@fkf-guinee.com",
+    email: "fatoukateminitetfils2@gmail.com",
+    emailHref: "mailto:fatoukateminitetfils2@gmail.com",
     whatsappNumber: "+224 623 74 65 87",
+    whatsappRaw: "224623746587",
     whatsappHref: "https://wa.me/224623746587",
   },
 

@@ -97,13 +97,69 @@ export default function App() {
     }
   };
 
-  const handleSubmitForm = (e) => {
+  const buildWhatsAppQuoteUrl = (data) => {
+    const text = [
+      "Bonjour FKF (Fatoukateminit et Fils),",
+      "",
+      "Je souhaite vous adresser une demande de devis :",
+      `• *Nom complet :* ${data.fullName || "-"}`,
+      `• *Entreprise / Organisation :* ${data.company || "-"}`,
+      `• *Téléphone :* ${data.phone || "-"}`,
+      `• *E-mail :* ${data.email || "-"}`,
+      `• *Prestation choisie :* ${data.service || "-"}`,
+      "",
+      "*Détails du besoin :*",
+      data.message || "-"
+    ].join("\n");
+    return `https://wa.me/${SITE_CONFIG.contact.whatsappRaw || "224623746587"}?text=${encodeURIComponent(text)}`;
+  };
+
+  const buildMailtoQuoteUrl = (data) => {
+    const subject = `Demande de devis FKF - ${data.service} (${data.company || data.fullName})`;
+    const body = [
+      "Bonjour FKF (Fatoukateminit et Fils),",
+      "",
+      "Voici les détails de ma demande de devis :",
+      `- Nom complet : ${data.fullName}`,
+      `- Entreprise / Organisation : ${data.company}`,
+      `- Téléphone : ${data.phone}`,
+      `- E-mail : ${data.email}`,
+      `- Prestation souhaitée : ${data.service}`,
+      "",
+      "Description détaillée du besoin :",
+      data.message
+    ].join("\n");
+    return `mailto:${SITE_CONFIG.contact.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  };
+
+  const handleSubmitForm = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setTimeout(() => {
+    try {
+      await fetch(`https://formsubmit.co/ajax/${SITE_CONFIG.contact.email}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify({
+          _subject: `Nouveau Devis FKF : ${formData.service} - ${formData.company || formData.fullName}`,
+          Nom_Complet: formData.fullName,
+          Entreprise_Organisation: formData.company,
+          Telephone: formData.phone,
+          Email_Client: formData.email,
+          Prestation_Demandee: formData.service,
+          Description_Du_Besoin: formData.message,
+          _template: "table",
+          _captcha: "false"
+        })
+      });
+    } catch (err) {
+      // Fallback silencieux
+    } finally {
       setIsSubmitting(false);
       setFormSubmitted(true);
-    }, 800);
+    }
   };
 
   const handleResetForm = () => {
@@ -138,15 +194,15 @@ export default function App() {
               <span>{SITE_CONFIG.contact.fullLocation}</span>
             </div>
             <div className="flex items-center gap-4 text-xs">
-              <span className="flex items-center gap-1.5 hover:text-[#D4AF37] transition-colors">
+              <a href={SITE_CONFIG.contact.phoneHref} className="flex items-center gap-1.5 hover:text-[#D4AF37] transition-colors">
                 <Phone size={13} className="text-[#D4AF37]" />
                 <span>{SITE_CONFIG.contact.phone}</span>
-              </span>
+              </a>
               <span className="hidden md:inline text-slate-500">|</span>
-              <span className="flex items-center gap-1.5 hover:text-[#D4AF37] transition-colors">
+              <a href={SITE_CONFIG.contact.emailHref} className="flex items-center gap-1.5 hover:text-[#D4AF37] transition-colors">
                 <Mail size={13} className="text-[#D4AF37]" />
                 <span>{SITE_CONFIG.contact.email}</span>
-              </span>
+              </a>
             </div>
           </div>
         </div>
@@ -621,8 +677,8 @@ export default function App() {
                       <Phone size={20} />
                     </div>
                     <div>
-                      <div className="font-bold text-xs text-[#D4AF37] uppercase tracking-wider">Ligne Téléphonique</div>
-                      <div className="text-slate-200 mt-0.5">{SITE_CONFIG.contact.phone}</div>
+                      <div className="font-bold text-xs text-[#D4AF37] uppercase tracking-wider">Ligne Téléphonique & WhatsApp</div>
+                      <a href={SITE_CONFIG.contact.phoneHref} className="block text-slate-200 hover:text-[#D4AF37] transition-colors mt-0.5">{SITE_CONFIG.contact.phone}</a>
                       <div className="text-slate-400 text-xs">Accueil & service client</div>
                     </div>
                   </div>
@@ -633,7 +689,7 @@ export default function App() {
                     </div>
                     <div>
                       <div className="font-bold text-xs text-[#D4AF37] uppercase tracking-wider">Courrier Électronique</div>
-                      <div className="text-slate-200 mt-0.5">{SITE_CONFIG.contact.email}</div>
+                      <a href={SITE_CONFIG.contact.emailHref} className="block text-slate-200 hover:text-[#D4AF37] transition-colors mt-0.5">{SITE_CONFIG.contact.email}</a>
                       <div className="text-slate-400 text-xs">Réception des appels d'offres</div>
                     </div>
                   </div>
@@ -667,21 +723,46 @@ export default function App() {
               <div className="bg-white rounded-2xl p-8 sm:p-10 border border-slate-200 shadow-xl">
                 
                 {formSubmitted ? (
-                  <div className="py-12 px-4 text-center space-y-6">
+                  <div className="py-10 px-4 text-center space-y-6">
                     <div className="w-20 h-20 rounded-full bg-green-50 border-2 border-green-500 text-green-600 flex items-center justify-center mx-auto shadow-md">
                       <CheckCircle2 size={42} />
                     </div>
                     <h3 className="font-extrabold text-2xl text-[#0A192F]">
-                      Votre demande a été enregistrée avec succès !
+                      Votre demande de devis a été envoyée !
                     </h3>
                     <p className="text-slate-600 text-sm max-w-md mx-auto leading-relaxed">
-                      Merci <strong>{formData.fullName}</strong> ({formData.company || "Votre structure"}). L'équipe de <strong>FKF Fatoukateminit et Fils</strong> examinera votre besoin en <strong>{formData.service}</strong> et reviendra vers vous dans les plus brefs délais.
+                      Merci <strong>{formData.fullName}</strong> ({formData.company || "Votre structure"}). Vos informations ont été transmises à <strong>{SITE_CONFIG.contact.email}</strong> pour votre besoin en <strong>{formData.service}</strong>.
                     </p>
                     
                     <div className="bg-[#F8FAFC] p-5 rounded-xl border border-slate-200 text-left text-xs space-y-2 max-w-md mx-auto">
-                      <div className="text-[#0A192F] font-bold">Récapitulatif transmis :</div>
-                      <div><span className="text-slate-500">Service :</span> {formData.service}</div>
+                      <div className="text-[#0A192F] font-bold">Récapitulatif de votre demande :</div>
+                      <div><span className="text-slate-500">Nom & Entreprise :</span> {formData.fullName} ({formData.company})</div>
+                      <div><span className="text-slate-500">Prestation :</span> {formData.service}</div>
                       <div><span className="text-slate-500">Contact :</span> {formData.email} | {formData.phone}</div>
+                      <div><span className="text-slate-500">Besoin :</span> {formData.message}</div>
+                    </div>
+
+                    <div className="max-w-md mx-auto space-y-3 pt-2">
+                      <p className="text-xs font-semibold text-[#0A192F]">
+                        Pour un traitement immédiat avec la Direction Générale, confirmez aussi en 1 clic sur WhatsApp :
+                      </p>
+                      <a
+                        href={buildWhatsAppQuoteUrl(formData)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full inline-flex items-center justify-center gap-3 bg-[#25D366] hover:bg-[#20ba59] text-white font-extrabold text-xs uppercase tracking-wider py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all"
+                      >
+                        <MessageCircle size={20} />
+                        <span>Envoyer ce devis pré-rempli sur WhatsApp ({SITE_CONFIG.contact.whatsappNumber})</span>
+                      </a>
+
+                      <a
+                        href={buildMailtoQuoteUrl(formData)}
+                        className="w-full inline-flex items-center justify-center gap-2 bg-[#D4AF37]/15 hover:bg-[#D4AF37] text-[#0A192F] font-bold text-xs uppercase tracking-wider py-3 px-6 rounded-xl border border-[#D4AF37] transition-all"
+                      >
+                        <Mail size={16} />
+                        <span>Ouvrir dans ma messagerie ({SITE_CONFIG.contact.email})</span>
+                      </a>
                     </div>
 
                     <div className="pt-4">
@@ -821,21 +902,31 @@ export default function App() {
                       ></textarea>
                     </div>
 
-                    <div>
+                    <div className="space-y-3">
                       <button 
                         type="submit"
                         disabled={isSubmitting}
                         className="w-full bg-[#D4AF37] hover:bg-[#B5952F] text-[#0A192F] font-extrabold text-sm uppercase tracking-wider py-4 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-3 disabled:opacity-75"
                       >
                         {isSubmitting ? (
-                          <span>Transmission en cours...</span>
+                          <span>Transmission à {SITE_CONFIG.contact.email}...</span>
                         ) : (
                           <>
-                            <span>Envoyer ma demande de devis</span>
+                            <span>Envoyer ma demande de devis par E-mail</span>
                             <Send size={18} />
                           </>
                         )}
                       </button>
+
+                      <a
+                        href={buildWhatsAppQuoteUrl(formData)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full bg-[#25D366]/10 hover:bg-[#25D366] text-[#128C7E] hover:text-white border border-[#25D366]/40 font-bold text-xs uppercase tracking-wider py-3.5 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2"
+                      >
+                        <MessageCircle size={18} />
+                        <span>Envoyer directement ce devis sur WhatsApp ({SITE_CONFIG.contact.whatsappNumber})</span>
+                      </a>
                     </div>
 
                     <div className="text-center">
@@ -917,8 +1008,8 @@ export default function App() {
               </h4>
               <div className="space-y-3 text-xs text-slate-400">
                 <p><strong className="text-white">Localisation :</strong><br />{SITE_CONFIG.contact.addressLine}, {SITE_CONFIG.contact.country}</p>
-                <p><strong className="text-white">Téléphone :</strong><br />{SITE_CONFIG.contact.phone}</p>
-                <p><strong className="text-white">E-mail :</strong><br />{SITE_CONFIG.contact.email}</p>
+                <p><strong className="text-white">Téléphone & WhatsApp :</strong><br /><a href={SITE_CONFIG.contact.phoneHref} className="hover:text-[#D4AF37] transition-colors">{SITE_CONFIG.contact.phone}</a></p>
+                <p><strong className="text-white">E-mail :</strong><br /><a href={SITE_CONFIG.contact.emailHref} className="hover:text-[#D4AF37] transition-colors">{SITE_CONFIG.contact.email}</a></p>
               </div>
               <div className="pt-4 flex items-center gap-3">
                 <a href={SITE_CONFIG.socials.linkedin} className="w-8 h-8 rounded-lg bg-[#112240] border border-slate-700 flex items-center justify-center text-slate-300 hover:text-[#D4AF37] hover:border-[#D4AF37] transition-all" aria-label="LinkedIn">

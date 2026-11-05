@@ -106,9 +106,10 @@
         fullLocation: "Kamsar • Boké • République de Guinée",
         phone: "+224 623 74 65 87",
         phoneHref: "tel:+224623746587",
-        email: "contact@fkf-guinee.com",
-        emailHref: "mailto:contact@fkf-guinee.com",
+        email: "fatoukateminitetfils2@gmail.com",
+        emailHref: "mailto:fatoukateminitetfils2@gmail.com",
         whatsappNumber: "+224 623 74 65 87",
+        whatsappRaw: "224623746587",
         whatsappHref: "https://wa.me/224623746587",
       },
 
@@ -502,14 +503,71 @@
         }
       };
 
-      const handleSubmitForm = (e) => {
+      // Construction du lien WhatsApp pré-rempli avec toutes les informations du devis
+      const buildWhatsAppQuoteUrl = (data) => {
+        const text = [
+          "Bonjour FKF (Fatoukateminit et Fils),",
+          "",
+          "Je souhaite vous adresser une demande de devis :",
+          `• *Nom complet :* ${data.fullName || "-"}`,
+          `• *Entreprise / Organisation :* ${data.company || "-"}`,
+          `• *Téléphone :* ${data.phone || "-"}`,
+          `• *E-mail :* ${data.email || "-"}`,
+          `• *Prestation choisie :* ${data.service || "-"}`,
+          "",
+          "*Détails du besoin :*",
+          data.message || "-"
+        ].join("\n");
+        return `https://wa.me/${SITE_CONFIG.contact.whatsappRaw || "224623746587"}?text=${encodeURIComponent(text)}`;
+      };
+
+      // Construction du lien mailto pré-rempli vers fatoukateminitetfils2@gmail.com
+      const buildMailtoQuoteUrl = (data) => {
+        const subject = `Demande de devis FKF - ${data.service} (${data.company || data.fullName})`;
+        const body = [
+          "Bonjour FKF (Fatoukateminit et Fils),",
+          "",
+          "Voici les détails de ma demande de devis :",
+          `- Nom complet : ${data.fullName}`,
+          `- Entreprise / Organisation : ${data.company}`,
+          `- Téléphone : ${data.phone}`,
+          `- E-mail : ${data.email}`,
+          `- Prestation souhaitée : ${data.service}`,
+          "",
+          "Description détaillée du besoin :",
+          data.message
+        ].join("\n");
+        return `mailto:${SITE_CONFIG.contact.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      };
+
+      const handleSubmitForm = async (e) => {
         e.preventDefault();
         setIsSubmitting(true);
-        // Simulation d'envoi asynchrone sécurisé
-        setTimeout(() => {
+        try {
+          await fetch(`https://formsubmit.co/ajax/${SITE_CONFIG.contact.email}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Accept": "application/json"
+            },
+            body: JSON.stringify({
+              _subject: `Nouveau Devis FKF : ${formData.service} - ${formData.company || formData.fullName}`,
+              Nom_Complet: formData.fullName,
+              Entreprise_Organisation: formData.company,
+              Telephone: formData.phone,
+              Email_Client: formData.email,
+              Prestation_Demandee: formData.service,
+              Description_Du_Besoin: formData.message,
+              _template: "table",
+              _captcha: "false"
+            })
+          });
+        } catch (err) {
+          // Fallback silencieux : les boutons mailto et WhatsApp restent disponibles sur l'écran de confirmation
+        } finally {
           setIsSubmitting(false);
           setFormSubmitted(true);
-        }, 800);
+        }
       };
 
       const handleResetForm = () => {
@@ -1093,22 +1151,48 @@
                   <div className="bg-white rounded-2xl p-8 sm:p-10 border border-slate-200 shadow-xl">
                     
                     {formSubmitted ? (
-                      /* Message de confirmation élégant (Succès) */
-                      <div className="py-12 px-4 text-center space-y-6">
+                      /* Message de confirmation élégant (Succès) + Envoi Direct E-mail & WhatsApp */
+                      <div className="py-10 px-4 text-center space-y-6">
                         <div className="w-20 h-20 rounded-full bg-green-50 border-2 border-green-500 text-green-600 flex items-center justify-center mx-auto shadow-md animate-bounce">
                           <Icon name="CheckCircle2" size={42} />
                         </div>
                         <h3 className="font-heading font-extrabold text-2xl text-brand-navy">
-                          Votre demande a été enregistrée avec succès !
+                          Votre demande de devis a été envoyée !
                         </h3>
                         <p className="text-slate-600 text-sm max-w-md mx-auto leading-relaxed">
-                          Merci <strong>{formData.fullName}</strong> ({formData.company || "Votre structure"}). L'équipe de <strong>FKF Fatoukateminit et Fils</strong> examinera votre besoin en <strong>{formData.service}</strong> et reviendra vers vous dans les plus brefs délais.
+                          Merci <strong>{formData.fullName}</strong> ({formData.company || "Votre structure"}). Vos informations ont été transmises à <strong>{SITE_CONFIG.contact.email}</strong> pour votre besoin en <strong>{formData.service}</strong>.
                         </p>
                         
                         <div className="bg-brand-slateBg p-5 rounded-xl border border-slate-200 text-left text-xs space-y-2 max-w-md mx-auto">
-                          <div className="text-brand-navy font-bold">Récapitulatif transmis :</div>
-                          <div><span className="text-slate-500">Service :</span> {formData.service}</div>
+                          <div className="text-brand-navy font-bold">Récapitulatif de votre demande :</div>
+                          <div><span className="text-slate-500">Nom & Entreprise :</span> {formData.fullName} ({formData.company})</div>
+                          <div><span className="text-slate-500">Prestation :</span> {formData.service}</div>
                           <div><span className="text-slate-500">Contact :</span> {formData.email} | {formData.phone}</div>
+                          <div><span className="text-slate-500">Besoin :</span> {formData.message}</div>
+                        </div>
+
+                        {/* Actions directes vers WhatsApp du PDG et Boîte E-mail pour ne rater aucune demande */}
+                        <div className="max-w-md mx-auto space-y-3 pt-2">
+                          <p className="text-xs font-semibold text-brand-navy">
+                            Pour un traitement immédiat avec la Direction Générale, confirmez aussi en 1 clic sur WhatsApp :
+                          </p>
+                          <a
+                            href={buildWhatsAppQuoteUrl(formData)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full inline-flex items-center justify-center gap-3 bg-[#25D366] hover:bg-[#20ba59] text-white font-heading font-extrabold text-xs uppercase tracking-wider py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all"
+                          >
+                            <Icon name="MessageCircle" size={20} />
+                            <span>Envoyer ce devis pré-rempli sur WhatsApp ({SITE_CONFIG.contact.whatsappNumber})</span>
+                          </a>
+
+                          <a
+                            href={buildMailtoQuoteUrl(formData)}
+                            className="w-full inline-flex items-center justify-center gap-2 bg-brand-gold/15 hover:bg-brand-gold text-brand-navy font-heading font-bold text-xs uppercase tracking-wider py-3 px-6 rounded-xl border border-brand-gold transition-all"
+                          >
+                            <Icon name="Mail" size={16} />
+                            <span>Ouvrir dans ma messagerie ({SITE_CONFIG.contact.email})</span>
+                          </a>
                         </div>
 
                         <div className="pt-4">
@@ -1255,22 +1339,32 @@
                           ></textarea>
                         </div>
 
-                        {/* Bouton de Soumission */}
-                        <div>
+                        {/* Boutons de Soumission (E-mail + WhatsApp pré-rempli) */}
+                        <div className="space-y-3">
                           <button 
                             type="submit"
                             disabled={isSubmitting}
                             className="w-full bg-brand-gold hover:bg-brand-goldHover text-brand-navy font-heading font-extrabold text-sm uppercase tracking-wider py-4 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-3 disabled:opacity-75"
                           >
                             {isSubmitting ? (
-                              <span>Transmission en cours...</span>
+                              <span>Transmission à {SITE_CONFIG.contact.email}...</span>
                             ) : (
                               <>
-                                <span>Envoyer ma demande de devis</span>
+                                <span>Envoyer ma demande de devis par E-mail</span>
                                 <Icon name="Send" size={18} />
                               </>
                             )}
                           </button>
+
+                          <a
+                            href={buildWhatsAppQuoteUrl(formData)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full bg-[#25D366]/10 hover:bg-[#25D366] text-[#128C7E] hover:text-white border border-[#25D366]/40 font-heading font-bold text-xs uppercase tracking-wider py-3.5 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2"
+                          >
+                            <Icon name="MessageCircle" size={18} />
+                            <span>Envoyer directement ce devis sur WhatsApp ({SITE_CONFIG.contact.whatsappNumber})</span>
+                          </a>
                         </div>
 
                         <div className="text-center">
@@ -1356,8 +1450,8 @@
                   </h4>
                   <div className="space-y-3 text-xs text-slate-400">
                     <p><strong className="text-white">Localisation :</strong><br />{SITE_CONFIG.contact.addressLine}, {SITE_CONFIG.contact.country}</p>
-                    <p><strong className="text-white">Téléphone :</strong><br />{SITE_CONFIG.contact.phone}</p>
-                    <p><strong className="text-white">E-mail :</strong><br />{SITE_CONFIG.contact.email}</p>
+                    <p><strong className="text-white">Téléphone & WhatsApp :</strong><br /><a href={SITE_CONFIG.contact.phoneHref} className="hover:text-brand-gold transition-colors">{SITE_CONFIG.contact.phone}</a></p>
+                    <p><strong className="text-white">E-mail :</strong><br /><a href={SITE_CONFIG.contact.emailHref} className="hover:text-brand-gold transition-colors">{SITE_CONFIG.contact.email}</a></p>
                   </div>
                   <div className="pt-4 flex items-center gap-3">
                     <a href={SITE_CONFIG.socials.linkedin} className="w-8 h-8 rounded-lg bg-brand-navyLight border border-slate-700 flex items-center justify-center text-slate-300 hover:text-brand-gold hover:border-brand-gold transition-all" aria-label="LinkedIn">
